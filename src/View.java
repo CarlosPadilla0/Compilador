@@ -2,6 +2,7 @@ import java.awt.Color;
 import java.awt.Font;
 import java.awt.event.ComponentEvent;
 import java.awt.event.ComponentListener;
+
 import javax.swing.DefaultListModel;
 import javax.swing.JButton;
 import javax.swing.JFileChooser;
@@ -48,20 +49,20 @@ public class View extends JFrame implements ComponentListener {
         txtFuente.setEditable(true);
         txtFuente.setFont(new Font("Arial", Font.PLAIN, 18));
         txtFuente.setBackground(Color.WHITE);
-        txtFuente.setForeground(Color.DARK_GRAY);  // Color de texto
-
+        txtFuente.setForeground(Color.DARK_GRAY);  
+        
         txtErrores = new JTextArea();
         txtErrores.setEditable(false);
         txtErrores.setFont(new Font("Arial", Font.PLAIN, 14));
-        txtErrores.setForeground(Color.RED);  
-        txtErrores.setBackground(new Color(255, 230, 230));  
+        txtErrores.setForeground(Color.RED);
+        txtErrores.setBackground(new Color(255, 230, 230));
 
         lstResultado = new JList<>(new DefaultListModel<>());
         lstResultado.setFont(new Font("Arial", Font.PLAIN, 18));
         lstResultado.setBackground(Color.WHITE);
         lstResultado.setForeground(Color.DARK_GRAY);
 
-     
+
         limpiar = new JButton("Limpiar");
         limpiar.setBackground(new Color(58, 130, 247));
         limpiar.setForeground(Color.WHITE);
@@ -143,8 +144,8 @@ public class View extends JFrame implements ComponentListener {
         lblResultado.setBounds((int) (w * 0.69), (int) (h * 0.01), 150, 30);
         scrollResultado.setBounds((int) (w * 0.69), (int) (h * 0.05), (int) (w * 0.29), (int) (h * 0.5));
 
-        lblErrores.setBounds((int) (w * 0.015), (int) (h * 0.55), 150, 30); 
-        scrollErrores.setBounds((int) (w * 0.015), (int) (h * 0.59), (int) (w * 0.65), (int) (h * 0.2));  
+        lblErrores.setBounds((int) (w * 0.015), (int) (h * 0.55), 150, 30);
+        scrollErrores.setBounds((int) (w * 0.015), (int) (h * 0.59), (int) (w * 0.65), (int) (h * 0.2));
 
         limpiar.setBounds((int) (w * 0.015), (int) (h * 0.81), botonAncho, botonAlto);
         abrirArchivo.setBounds((int) (w * 0.015 + botonAncho + separacion), (int) (h * 0.81), botonAncho, botonAlto);
