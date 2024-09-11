@@ -52,43 +52,65 @@ public class Parser {
 	}
 	// INSTRUCCIONES → [[ INSTRUCCION;]]*
 	private void instrucciones() {
-		while (tokenActual != null ) {
-			System.out.println("Procesando token: " + tokenActual.getTipo() + " en posición " + posicion);
+	    while (tokenActual != null) {
+	        System.out.println("Procesando token: " + tokenActual.getTipo() + " en posición " + posicion);
 
-			if (tokenActual.getTipo() == TokenType.END) {
-				System.out.println("Fin del programa encontrado en posición " + posicion);
-				break;
+	        if (tokenActual.getTipo() == TokenType.LLAVE_DERECHA) {
+	            System.out.println("Se encontró llave de cierre '}' en posición " + posicion);
+	            return; 
+	        }
 
-			}
-			instruccion();
-			avanzar();
-		}
+	        if (tokenActual.getTipo() == TokenType.END) {
+	            System.out.println("Fin del programa encontrado en posición " + posicion);
+	            break;
+	        }
+
+	        instruccion();
+	        
+	        if (errorMsg != null) {
+	            return;
+	        }
+	    }
 	}
-	// INSTRUCCION → DATA_TYPE IDENTIFICADOR | IDENTIFICADOR = EXPRESION | WHILE EXPRESION {INSTRUCCIONES} | IF CONDICION {INSTRUCCIONES} [[ ELSE {INSTRUCCIONES}]]?
+
 	private void instruccion() {
-		if (tipo(tokenActual)) {
-			declaracion();
-			return;
-		}
+	    if (errorMsg != null) {
+	        return;
+	    }
 
-		if(tokenActual.getTipo()==TokenType.IDENTIFICADOR) {
-			identificadorexp();
-			return;
-		}
+	    if (tipo(tokenActual)) {
+	        declaracion();
+	        return;
+	    }
 
-		if(tokenActual.getTipo()==TokenType.IF||tokenActual.getTipo()==TokenType.WHILE) {
-			System.out.println("Me cachondeo pq soy if"+tokenActual.getTipo());
+	    if(tokenActual.getTipo() == TokenType.IDENTIFICADOR) {
+	        identificadorexp();
+	        return;
+	    }
 
-			CheckIfWhile();
-			return;
-		}
+	    if(tokenActual.getTipo() == TokenType.IF ) {
+	        System.out.println("Me cachondeo pq soy if" + tokenActual.getTipo());
+	        CheckIf();
+	        return;
+	    }
+	    if (tokenActual.getTipo()==TokenType.WHILE) {
+	    	CheckWhile();
+	    	return;
+	    	
+	    }
+	    if(tokenActual.getTipo() == TokenType.END) {
+	        errorMsg = "No hay errores";
+	        return;
+	    }
 
-		if(tokenActual.getTipo()==TokenType.END) {
-			errorMsg="No hay errores";
-			return;
-		}
-		System.out.println("A mi no me acomodaron"+ tokenActual.getTipo()+" "+tokenActual.getValor());
-		return;
+	    if(tokenActual.getTipo() == TokenType.LLAVE_DERECHA) {
+	        avanzar();
+	        return;
+	    }
+
+	    System.out.println("A mi no me acomodaron " + tokenActual.getTipo() + " " + tokenActual.getValor());
+	    errorMsg="Syntax Error";
+	    return;
 	}
 	// EXPRESION → IDENTIFICADOR | NUMERO | (EXPRESION OPERADOR EXPRESION)
 	private void expresion() {
@@ -173,86 +195,121 @@ public class Parser {
 		avanzar();
 	}
 
-	private void CheckIfWhile() {
-		if (tokenActual.getTipo() == TokenType.IF) {
-			avanzar();
-			condicion();
-			if (errorMsg != null) {
-				System.out.println("Error en la condición del IF: " + errorMsg);
-				return;
-			}
+	private void CheckIf() {
+	    if (tokenActual == null) {
+	        errorMsg = "Error: token inesperadamente null al procesar IF o WHILE.";
+	        return;
+	    }
 
-			if (tokenActual.getTipo() != TokenType.LLAVE_IZQUIERDA) {
-				errorMsg = "Se esperaba llave de apertura '{' después de la condición del IF.";
-				return;
-			}
-			avanzar();
+	    if (tokenActual.getTipo() == TokenType.IF) {
+	        avanzar();  
+	        condicion();  
+	        if (errorMsg != null) {
+	            System.out.println("Error en la condición del IF: " + errorMsg);
+	            return;
+	        }
 
-			if (tokenActual.getTipo() == TokenType.LLAVE_DERECHA) {
-				System.out.println("Bloque IF vacío, llave de cierre encontrada.");
-				avanzar();
-			} else {
-				instrucciones();
-				if(tokenActual.getTipo()==TokenType.END) {
-					return;
-				}
-				if (errorMsg != null) {
-					System.out.println("Error en las instrucciones del IF: " + errorMsg);
-					return;
-				}
-				System.out.println(tokenActual.getTipo()+"aaaa");
-				if (tokenActual.getTipo() != TokenType.LLAVE_DERECHA) {
-					errorMsg = "Se esperaba llave de cierre '}' al final del bloque IF."+tokenActual.getTipo();
-					return;
-				}
-				System.out.println("Llave derecha encontrada: " + tokenActual.getTipo() + " " + tokenActual.getValor());
-				avanzar();
-			}
+	        if (tokenActual == null || tokenActual.getTipo() != TokenType.LLAVE_IZQUIERDA) {
+	            errorMsg = "Se esperaba llave de apertura '{' después de la condición del IF.";
+	            return;
+	        }
 
-			if (tokenActual.getTipo() == TokenType.ELSE) {
-				avanzar();
+	        avanzar();  
 
-				if (tokenActual.getTipo() != TokenType.LLAVE_IZQUIERDA) {
-					errorMsg = "Se esperaba llave de apertura '{' después del ELSE.";
-					return;
-				}
+	        
+	        if (tokenActual != null && tokenActual.getTipo() == TokenType.LLAVE_DERECHA) {
+	            System.out.println("Bloque vacío encontrado para IF.");
+	            avanzar();  
+	            return;
+	        }
 
-				avanzar();
-				instrucciones();
+	        instrucciones();
 
-				if (tokenActual.getTipo() != TokenType.LLAVE_DERECHA) {
-					errorMsg = "Se esperaba llave de cierre '}' al final del bloque ELSE.";
-					return;
-				}
-				avanzar();
-			}
-		}
-		if (tokenActual.getTipo() == TokenType.WHILE) {
-			avanzar();
-			condicion();
-			System.out.println("Llave " + tokenActual.getTipo() + " " + tokenActual.getValor());
+	        if (errorMsg != null) {
+	            return;
+	        }
 
-			if (tokenActual.getTipo() == TokenType.LLAVE_DERECHA) {
-				System.out.println("Bloque WHILE vacío, llave de cierre encontrada.");
-				avanzar();
-			} else {
-				instrucciones();
-				if(tokenActual.getTipo()==TokenType.END) {
-					return;
-				}
-				if (errorMsg != null) {
-					System.out.println("Error en las instrucciones del WHILE: " + errorMsg);
-					return;
-				}
-				System.out.println(tokenActual.getTipo()+"aaaa");
-				if (tokenActual.getTipo() != TokenType.LLAVE_DERECHA) {
-					errorMsg = "Se esperaba llave de cierre '}' al final del bloque WHILE."+tokenActual.getTipo();
-					return;
-				}
-				System.out.println("Llave derecha encontrada: " + tokenActual.getTipo() + " " + tokenActual.getValor());
-				avanzar();
-			}
-		}
+	        if (tokenActual == null || tokenActual.getTipo() != TokenType.LLAVE_DERECHA) {
+	            errorMsg = "Se esperaba llave de cierre '}' al final del bloque IF.";
+	            return;
+	        }
+
+	        avanzar(); 
+	       
+	        if (tokenActual != null && tokenActual.getTipo() == TokenType.END) {
+	            return;
+	        }
+	        
+	        if (tokenActual != null && tokenActual.getTipo() == TokenType.ELSE) {
+	            avanzar();  
+
+	            if (tokenActual == null || tokenActual.getTipo() != TokenType.LLAVE_IZQUIERDA) {
+	                errorMsg = "Se esperaba llave de apertura '{' después del ELSE.";
+	                return;
+	            }
+
+	            avanzar(); 
+	            instrucciones();  
+
+	            if (errorMsg != null) {
+	                return;
+	            }
+
+	            if (tokenActual == null || tokenActual.getTipo() != TokenType.LLAVE_DERECHA) {
+	                errorMsg = "Se esperaba llave de cierre '}' al final del bloque ELSE.";
+	                return;
+	            }
+
+	            avanzar();  
+	        }
+	        if (tokenActual != null && tokenActual.getTipo() == TokenType.END) {
+	        	return;
+	        }
+	    }
+	}
+
+	private void CheckWhile() {
+	    if (tokenActual == null) {
+	        errorMsg = "Error: token inesperadamente null al procesar WHILE.";
+	        return;
+	    }
+
+	    if (tokenActual.getTipo() == TokenType.WHILE) {
+	        avanzar();  
+	        condicion();  
+	        if (errorMsg != null) {
+	            System.out.println("Error en la condición del WHILE: " + errorMsg);
+	            return;
+	        }
+
+	        if (tokenActual == null || tokenActual.getTipo() != TokenType.LLAVE_IZQUIERDA) {
+	            errorMsg = "Se esperaba llave de apertura '{' después de la condición del WHILE.";
+	            return;
+	        }
+
+	        avanzar(); 
+
+	        if (tokenActual != null && tokenActual.getTipo() == TokenType.LLAVE_DERECHA) {
+	            System.out.println("Bloque WHILE vacío, llave de cierre encontrada.");
+	            avanzar();  
+	            return;
+	        }
+
+	        instrucciones();  
+
+	        if (errorMsg != null) {
+	            System.out.println("Error en las instrucciones del WHILE: " + errorMsg);
+	            return;
+	        }
+
+	        if (tokenActual == null || tokenActual.getTipo() != TokenType.LLAVE_DERECHA) {
+	            errorMsg = "Se esperaba llave de cierre '}' al final del bloque WHILE.";
+	            return;
+	        }
+
+	        System.out.println("Llave derecha encontrada: " + tokenActual.getTipo() + " " + tokenActual.getValor());
+	        avanzar(); 
+	    }
 	}
 
 	private boolean tipo(TokenObj tok) {
@@ -267,4 +324,3 @@ public class Parser {
 		}
 	}
 }
-
