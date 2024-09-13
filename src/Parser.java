@@ -33,7 +33,7 @@ public class Parser {
 			System.out.println("Análisis sintáctico completado sin errores.");
 		}
 	}
-	// PROGRAMA → START INSTRUCCIONES END
+
 	private void programa() {
 		if (tokens.get(tokens.size()-1).getTipo() != TokenType.END) {
 			errorMsg="Se esperaba un END al final del programa";
@@ -50,7 +50,7 @@ public class Parser {
 		instrucciones();
 
 	}
-	// INSTRUCCIONES → [[ INSTRUCCION;]]*
+
 	private void instrucciones() {
 	    while (tokenActual != null) {
 	        System.out.println("Procesando token: " + tokenActual.getTipo() + " en posición " + posicion);
@@ -112,7 +112,7 @@ public class Parser {
 	    errorMsg="Syntax Error";
 	    return;
 	}
-	// EXPRESION → IDENTIFICADOR | NUMERO | (EXPRESION OPERADOR EXPRESION)
+
 	private void expresion() {
 		if (tokenActual.getTipo() == TokenType.IDENTIFICADOR ||
 				tokenActual.getTipo() == TokenType.NUMERO) {
@@ -141,7 +141,7 @@ public class Parser {
 
 		errorMsg = "Se esperaba un identificador, número o paréntesis";
 	}
-	// CONDICION → EXPRESION OPERADOR_LOGICO EXPRESION
+
 	private void condicion() {
 		if (tokenActual.getTipo() != TokenType.NUMERO && tokenActual.getTipo() != TokenType.IDENTIFICADOR) {
 			errorMsg = "Error en la condición: se esperaba un número o identificador, pero se encontró " + tokenActual.getTipo();
