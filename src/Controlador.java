@@ -37,23 +37,25 @@ public class Controlador implements ActionListener {
             manejarSintactico();
             return;
         }
+        if (e.getSource() == pantalla.getSemantico()) { 
+            manejarSemantico();
+            return;
+        }
     }
 
     private void manejarAbrirArchivo() {
-    	System.out.println("Presionado");
-    	int returnValue = pantalla.getFileChooser().showOpenDialog(pantalla);
-    	if (returnValue == JFileChooser.APPROVE_OPTION) {
-    		File selectedFile = pantalla.getFileChooser().getSelectedFile();
-    		try {
-    			String content = new String(Files.readAllBytes(selectedFile.toPath()));
-    			pantalla.getTxtFuente().setText(content);
-    		} catch (IOException ex) {
-    			ex.printStackTrace();
-    			JOptionPane.showMessageDialog(null, "Error al leer el archivo", "Error", JOptionPane.ERROR_MESSAGE);
-    		}
-    	}
-    	return;
-
+        System.out.println("Presionado");
+        int returnValue = pantalla.getFileChooser().showOpenDialog(pantalla);
+        if (returnValue == JFileChooser.APPROVE_OPTION) {
+            File selectedFile = pantalla.getFileChooser().getSelectedFile();
+            try {
+                String content = new String(Files.readAllBytes(selectedFile.toPath()));
+                pantalla.getTxtFuente().setText(content);
+            } catch (IOException ex) {
+                ex.printStackTrace();
+                JOptionPane.showMessageDialog(null, "Error al leer el archivo", "Error", JOptionPane.ERROR_MESSAGE);
+            }
+        }
     }
 
     private void manejarLimpiar() {
@@ -66,16 +68,29 @@ public class Controlador implements ActionListener {
 
     private void manejarAnalizar() {
         mod.setContenido(pantalla.getTxtFuente().getText());
-        List<TokenObj> tokens = mod.analizarLexico();
+        List<Token> tokens = mod.analizarLexico();
         DefaultListModel<String> model = (DefaultListModel<String>) pantalla.getLstResultado().getModel();
         model.clear();
-        for (TokenObj token : tokens) {
+        for (Token token : tokens) {
             model.addElement(token.toString());
         }
     }
 
     private void manejarSintactico() {
-    	        String resultado = mod.analizarSintactico();
-    	        pantalla.getTxtErrores().setText(resultado);
-    	    }
+        String resultado = mod.analizarSintactico();
+        pantalla.getTxtErrores().setText(resultado);
+    }
+
+    private void manejarSemantico() {
+        String resultadoSemantico = mod.analizarSemantico();  
+        pantalla.getTxtErrores().setText(resultadoSemantico);  
+        
+        if (resultadoSemantico.equalsIgnoreCase("Análisis semántico completado sin errores.")) {
+            String codigoIntermedio = mod.generarCodigoIntermedio();  
+            pantalla.mostrarCodigoIntermedio(codigoIntermedio);  
+        }
+    }
+
+
 }
+

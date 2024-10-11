@@ -1,9 +1,9 @@
-public class TokenObj {
+public class Token {
     private TokenType tipo;
     private String valor;
     private boolean pr;
 
-    public TokenObj(TokenType tipo, String valor) {
+    public Token(TokenType tipo, String valor) {
         this.tipo = tipo;
         this.valor = valor;
         this.pr = false;

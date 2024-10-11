@@ -1,12 +1,12 @@
 import java.util.List;
 
 public class Parser {
-	private List<TokenObj> tokens;
+	private List<Token> tokens;
 	private int posicion;
-	private TokenObj tokenActual;
+	private Token tokenActual;
 	private String errorMsg;
 
-	public Parser(List<TokenObj> tokens) {
+	public Parser(List<Token> tokens) {
 		this.tokens = tokens;
 		this.posicion = 0;
 		this.tokenActual = tokens.get(0);
@@ -114,32 +114,33 @@ public class Parser {
 	}
 
 	private void expresion() {
-		if (tokenActual.getTipo() == TokenType.IDENTIFICADOR ||
-				tokenActual.getTipo() == TokenType.NUMERO) {
-			avanzar();
-			return;
-		}
-		if (tokenActual.getTipo() == TokenType.PARENTESIS_IZQUIERDO) {
-			avanzar();
-			expresion();
+	    if (tokenActual.getTipo() == TokenType.IDENTIFICADOR ||
+	        tokenActual.getTipo() == TokenType.NUMERO ||
+	        tokenActual.getTipo() == TokenType.TEXTO) {  
+	        avanzar();
+	        return;
+	    }
+	    if (tokenActual.getTipo() == TokenType.PARENTESIS_IZQUIERDO) {
+	        avanzar();
+	        expresion();
 
-			if (tokenActual.getTipo() != TokenType.OPERADOR) {
-				errorMsg = "Se esperaba un operador válido";
-				return;
-			}
+	        if (tokenActual.getTipo() != TokenType.OPERADOR) {
+	            errorMsg = "Se esperaba un operador válido";
+	            return;
+	        }
 
-			avanzar();
-			expresion();
+	        avanzar();
+	        expresion();
 
-			if (tokenActual.getTipo() != TokenType.PARENTESIS_DERECHO) {
-				errorMsg = "Falta el paréntesis de cierre";
-				return;
-			}
-			avanzar();
-			return;
-		}
+	        if (tokenActual.getTipo() != TokenType.PARENTESIS_DERECHO) {
+	            errorMsg = "Falta el paréntesis de cierre";
+	            return;
+	        }
+	        avanzar();
+	        return;
+	    }
 
-		errorMsg = "Se esperaba un identificador, número o paréntesis";
+	    errorMsg = "Se esperaba un identificador, número, cadena o paréntesis";
 	}
 
 	private void condicion() {
@@ -178,21 +179,29 @@ public class Parser {
 	}
 
 	private void identificadorexp() {
-		avanzar();
-		if (tokenActual.getTipo() != TokenType.IGUAL) {
-			errorMsg = "Se esperaba un = en la instrucción de asignación.";
-			return;
-		}
+	    avanzar();
+	    
+	    if (tokenActual.getTipo() != TokenType.IGUAL) {
+	        errorMsg = "Se esperaba un = en la instrucción de asignación.";
+	        return;
+	    }
 
-		avanzar();
-		expresion();
+	    avanzar();
+	    
+	
+	    if ( tokenActual.getTipo() != TokenType.TEXTO) {
+	        errorMsg = "Error: Se esperaba una cadena de texto para la variable de tipo STRING.";
+	        return;
+	    }
 
-		if (tokenActual.getTipo() != TokenType.PUNTO_COMA) {
-			errorMsg = "Se esperaba un ; al final de la instrucción.";
-			return;
-		}
+	    expresion();
 
-		avanzar();
+	    if (tokenActual.getTipo() != TokenType.PUNTO_COMA) {
+	        errorMsg = "Se esperaba un ; al final de la instrucción.";
+	        return;
+	    }
+
+	    avanzar();
 	}
 
 	private void CheckIf() {
@@ -312,8 +321,8 @@ public class Parser {
 	    }
 	}
 
-	private boolean tipo(TokenObj tok) {
-		return tok.getTipo()==TokenType.BOOLEAN||tok.getTipo()==TokenType.DOUBLE||tok.getTipo()==TokenType.INT;
+	private boolean tipo(Token tok) {
+		return tok.getTipo()==TokenType.BOOLEAN||tok.getTipo()==TokenType.STRING||tok.getTipo()==TokenType.INT;
 	}
 
 	public String getLineaError() {
@@ -323,4 +332,6 @@ public class Parser {
 			return "Análisis sintáctico completado sin errores.";
 		}
 	}
+	
+	
 }
