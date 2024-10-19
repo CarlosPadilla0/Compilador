@@ -12,7 +12,7 @@ public class Semantic {
     }
     
     public String generarCodigoIntermedio() {
-        IntermediateCodeGenerator codeGen = new IntermediateCodeGenerator(symbolTable);
+        IntermediateCodeGenerator codeGen = new IntermediateCodeGenerator(symbolTable, tokens);
         return codeGen.generate();
     }
     

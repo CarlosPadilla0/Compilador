@@ -99,7 +99,6 @@ public class View extends JFrame implements ComponentListener {
         txtCodigoIntermedio.setFont(new Font("Arial", Font.PLAIN, 14));
         txtCodigoIntermedio.setBackground(new Color(230, 255, 230));
         txtCodigoIntermedio.setForeground(Color.DARK_GRAY);
-        txtCodigoIntermedio.setText(".DATA\n");  
 
         scrollFuente = new JScrollPane(txtFuente);
         scrollResultado = new JScrollPane(lstResultado);

@@ -187,14 +187,11 @@ public class Parser {
 	    }
 
 	    avanzar();
-	    
-	
-	    if ( tokenActual.getTipo() != TokenType.TEXTO) {
-	        errorMsg = "Error: Se esperaba una cadena de texto para la variable de tipo STRING.";
-	        return;
-	    }
-
 	    expresion();
+	
+	  
+
+	   
 
 	    if (tokenActual.getTipo() != TokenType.PUNTO_COMA) {
 	        errorMsg = "Se esperaba un ; al final de la instrucción.";
