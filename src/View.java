@@ -33,6 +33,10 @@ public class View extends JFrame implements ComponentListener {
     private JTextArea txtCodigoIntermedio;      
     private JScrollPane scrollCodigoIntermedio;  
     private JLabel lblCodigoIntermedio;  
+    private JButton generarCodigoObjeto;
+    private JTextArea txtCodigoObjeto;
+    private JScrollPane scrollCodigoObjeto;
+    private JLabel lblCodigoObjeto;
 
     public View() {
         super("Análisis Léxico, Sintáctico y Semántico");
@@ -121,7 +125,22 @@ public class View extends JFrame implements ComponentListener {
         lblCodigoIntermedio.setFont(new Font("Arial", Font.BOLD, 16));
         lblCodigoIntermedio.setForeground(Color.DARK_GRAY);
         
-   
+        generarCodigoObjeto = new JButton("Generar Código Objeto");
+        generarCodigoObjeto.setBackground(new Color(58, 130, 247));
+        generarCodigoObjeto.setForeground(Color.WHITE);
+        generarCodigoObjeto.setFont(new Font("Arial", Font.BOLD, 14));
+
+        txtCodigoObjeto = new JTextArea();
+        txtCodigoObjeto.setEditable(false);
+        txtCodigoObjeto.setFont(new Font("Arial", Font.PLAIN, 14));
+        txtCodigoObjeto.setBackground(new Color(230, 230, 255));
+        txtCodigoObjeto.setForeground(Color.DARK_GRAY);
+
+        scrollCodigoObjeto = new JScrollPane(txtCodigoObjeto);
+
+        lblCodigoObjeto = new JLabel("Código Objeto");
+        lblCodigoObjeto.setFont(new Font("Arial", Font.BOLD, 16));
+        lblCodigoObjeto.setForeground(Color.DARK_GRAY);
 
         add(lblFuente);
         add(lblErrores);
@@ -136,6 +155,9 @@ public class View extends JFrame implements ComponentListener {
         add(abrirArchivo);
         add(sintactico);
         add(semantico);  
+        add(lblCodigoObjeto);
+        add(scrollCodigoObjeto);
+        add(generarCodigoObjeto);
 
         sizes();
         revalidate();
@@ -147,6 +169,7 @@ public class View extends JFrame implements ComponentListener {
         abrirArchivo.addActionListener(c);
         sintactico.addActionListener(c);
         semantico.addActionListener(c); 
+        generarCodigoObjeto.addActionListener(c);
         this.addComponentListener(this);
     }
 
@@ -159,29 +182,44 @@ public class View extends JFrame implements ComponentListener {
     private void sizes() {
         int w = this.getWidth();
         int h = this.getHeight();
-
+    
         int botonAncho = (int) (w * 0.14);
         int botonAlto = (int) (h * 0.05);
-        int separacion = (int) (w * 0.01);
-
+        int separacionHorizontal = (int) (w * 0.01);
+        int separacionVertical = (int) (h * 0.02);
+    
+        int recuadroAncho = (int) (w * 0.40);
+        int recuadroAlto = (int) (h * 0.20);
+        int recuadroY = (int) (h * 0.70);
+    
+        // Reposicionar etiquetas y paneles existentes
         lblFuente.setBounds((int) (w * 0.015), (int) (h * 0.01), 150, 30);
         scrollFuente.setBounds((int) (w * 0.015), (int) (h * 0.05), (int) (w * 0.65), (int) (h * 0.35));
-
+    
         lblResultado.setBounds((int) (w * 0.69), (int) (h * 0.01), 150, 30);
         scrollResultado.setBounds((int) (w * 0.69), (int) (h * 0.05), (int) (w * 0.29), (int) (h * 0.4));
-
+    
         lblErrores.setBounds((int) (w * 0.015), (int) (h * 0.42), 150, 30);
         scrollErrores.setBounds((int) (w * 0.015), (int) (h * 0.46), (int) (w * 0.65), (int) (h * 0.14));
-
-        lblCodigoIntermedio.setBounds((int) (w * 0.015), (int) (h * 0.61), 200, 30); 
-        scrollCodigoIntermedio.setBounds((int) (w * 0.015), (int) (h * 0.65), (int) (w * 0.40), (int) (h * 0.20)); 
-
+    
+        lblCodigoIntermedio.setBounds((int) (w * 0.015), recuadroY - 30, 200, 30);
+        scrollCodigoIntermedio.setBounds((int) (w * 0.015), recuadroY, recuadroAncho, recuadroAlto);
+    
+        lblCodigoObjeto.setBounds((int) (w * 0.50), recuadroY - 30, 200, 30);
+        scrollCodigoObjeto.setBounds((int) (w * 0.50), recuadroY, recuadroAncho, recuadroAlto);
+    
+        // Reorganizar los botones en formato 2x2 con uno adicional debajo
         int botonX = (int) (w * 0.69);
-        limpiar.setBounds(botonX, (int) (h * 0.51), botonAncho, botonAlto);
-        abrirArchivo.setBounds(botonX, (int) (h * 0.52) + botonAlto + separacion, botonAncho, botonAlto);
-        analizar.setBounds(botonX, (int) (h * 0.53) + 2 * (botonAlto + separacion), botonAncho, botonAlto);
-        sintactico.setBounds(botonX, (int) (h * 0.54) + 3 * (botonAlto + separacion), botonAncho, botonAlto);
-        semantico.setBounds(botonX, (int) (h * 0.55) + 4 * (botonAlto + separacion), botonAncho, botonAlto);
+        int botonY = (int) (h * 0.52);
+    
+        limpiar.setBounds(botonX, botonY-30, botonAncho, botonAlto);
+        abrirArchivo.setBounds(botonX + botonAncho + separacionHorizontal, botonY-30, botonAncho, botonAlto);
+    
+        analizar.setBounds(botonX, botonY-30 + botonAlto + separacionVertical, botonAncho, botonAlto);
+        sintactico.setBounds(botonX + botonAncho + separacionHorizontal, botonY-30 + botonAlto + separacionVertical, botonAncho, botonAlto);
+    
+        semantico.setBounds(botonX, botonY-30 + 2 * (botonAlto + separacionVertical), botonAncho, botonAlto);
+        generarCodigoObjeto.setBounds(botonX + botonAncho + separacionHorizontal, botonY-30 + 2 * (botonAlto + separacionVertical), botonAncho, botonAlto);
     }
 
     public void mostrarResultado(String resultado) {
@@ -192,7 +230,11 @@ public class View extends JFrame implements ComponentListener {
 
     // Método para mostrar el código intermedio en el nuevo JTextArea
     public void mostrarCodigoIntermedio(String codigo) {
-        txtCodigoIntermedio.setText(codigo);  // Actualizar el JTextArea con el código intermedio
+        txtCodigoIntermedio.setText(codigo);  
+    }
+
+    public void mostrarCodigoObjeto(String codigo) {
+        txtCodigoObjeto.setText(codigo);
     }
 
     public JTextArea getTxtFuente() {
@@ -353,4 +395,11 @@ public class View extends JFrame implements ComponentListener {
 		this.lstResultado = lstResultado;
 	}
 	
+    public JButton getGenerarCodigoObjeto() {
+        return generarCodigoObjeto;
+    }
+
+    public JTextArea getTxtCodigoObjeto() {
+        return txtCodigoObjeto;
+    }
 }

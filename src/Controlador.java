@@ -12,6 +12,7 @@ import javax.swing.JOptionPane;
 public class Controlador implements ActionListener {
     private Scanner mod;
     private View pantalla;
+    private String codigoIntermedio; // Variable para almacenar el código intermedio
 
     public Controlador(Scanner mod, View v1) {
         this.mod = mod;
@@ -23,23 +24,21 @@ public class Controlador implements ActionListener {
     public void actionPerformed(ActionEvent e) {
         if (e.getSource() == pantalla.getAbrirArchivo()) {
             manejarAbrirArchivo();
-            return;
         }
         if (e.getSource() == pantalla.getLimpiar()) {
             manejarLimpiar();
-            return;
         }
         if (e.getSource() == pantalla.getAnalizar()) {
             manejarAnalizar();
-            return;
         }
         if (e.getSource() == pantalla.getSintactico()) {
             manejarSintactico();
-            return;
         }
         if (e.getSource() == pantalla.getSemantico()) { 
             manejarSemantico();
-            return;
+        }
+        if (e.getSource() == pantalla.getGenerarCodigoObjeto()) {
+            manejarGenerarCodigoObjeto();
         }
     }
 
@@ -64,6 +63,7 @@ public class Controlador implements ActionListener {
         ((DefaultListModel<String>) pantalla.getLstResultado().getModel()).clear();
 
         mod.reset();
+        codigoIntermedio = null; // Limpiar el código intermedio almacenado
     }
 
     private void manejarAnalizar() {
@@ -86,11 +86,18 @@ public class Controlador implements ActionListener {
         pantalla.getTxtErrores().setText(resultadoSemantico);  
         
         if (resultadoSemantico.equalsIgnoreCase("Análisis semántico completado sin errores.")) {
-            String codigoIntermedio = mod.generarCodigoIntermedio();  
+            System.out.println("Generando código intermedio en Controlador...");
+            codigoIntermedio = mod.generarCodigoIntermedio();  // Generar y almacenar el código intermedio
             pantalla.mostrarCodigoIntermedio(codigoIntermedio);  
         }
     }
 
-
+    private void manejarGenerarCodigoObjeto() {
+        if (codigoIntermedio == null) {
+            System.out.println("Generando código intermedio antes de generar código objeto en Controlador...");
+            codigoIntermedio = mod.generarCodigoIntermedio(); // Generar el código intermedio si no está almacenado
+        }
+        String codigoObjeto = mod.generarCodigoObjeto();
+        pantalla.mostrarCodigoObjeto(codigoObjeto);
+    }
 }
-

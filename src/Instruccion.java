@@ -4,7 +4,7 @@ public class Instruccion {
     private String op2;
 
     public Instruccion(String nameOp, String op1, String op2) {
-        this.nameOp = nameOp;
+        this.nameOp = nameOp.trim().stripIndent().strip().stripLeading().stripTrailing();
         this.op1 = op1;
         this.op2 = op2;
     }

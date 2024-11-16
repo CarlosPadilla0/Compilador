@@ -1,3 +1,4 @@
+import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -5,100 +6,120 @@ import java.util.Map;
 
 public class ObjGenerator {
 
-    private static final Map<String, String> registerMap = new HashMap<>();
-    private static final Map<String, String> WMap = new HashMap<>();
-    private static final Map<String, String> MODMap = new HashMap<>();
-    private static final Map<String, String> RMMap = new HashMap<>();
-    private static StringBuilder code = new StringBuilder();
-    private static final Map<String, List<InstructionFormat>> instructionMap = new HashMap<>();
-    private static List<Instruccion> instrucciones = new ArrayList<>();
-    private int memoryAddressCounter = 0x0000; // Dirección de inicio de la memoria
+    private final Map<String, String> registerMap;
+    private final Map<String, String> WMap;
+    private final Map<String, String> MODMap;
+    private final Map<String, String> RMMap;
+    private final Map<String, String> MMMap;
+    private StringBuilder code;
+    private final Map<String, List<InstructionFormat>> instructionMap;
+    private List<Instruccion> instrucciones;
+    private int memoryAddressCounter;
+    private final Map<String, Integer> labelMap;
+    private Map<String, Integer> formatMap;
 
-    // Método para generar la dirección de memoria como una cadena hexadecimal de 4 dígitos
+    public ObjGenerator() {
+        this.registerMap = new HashMap<>();
+        this.WMap = new HashMap<>();
+        this.MODMap = new HashMap<>();
+        this.RMMap = new HashMap<>();
+        this.MMMap = new HashMap<>();
+        this.code = new StringBuilder();
+        this.instructionMap = new HashMap<>();
+        this.instrucciones = new ArrayList<>();
+        this.memoryAddressCounter = 0x0000;
+        this.labelMap = new HashMap<>();
+        this.formatMap = new HashMap<>();
+        defInstr();
+        defRegs();
+        defW();
+        defMOD();
+        defRM();
+    }
+
     private String generateMemoryAddress() {
         String address = String.format("%04X", memoryAddressCounter);
         return address;
     }
 
-    // Método para incrementar la dirección de memoria en función del tipo de dato
     private void incrementMemoryAddress(String dataType) {
         switch (dataType) {
             case "DB":
-                memoryAddressCounter += 2; // Incremento de 2 byte para datos tipo DB
+                memoryAddressCounter += 2;
                 break;
             case "DW":
-                memoryAddressCounter += 4; // Incremento de 4 bytes para datos tipo DW
+                memoryAddressCounter += 4;
                 break;
             default:
                 break;
         }
     }
 
-    public ObjGenerator() {
-        defRegs();
-        defW();
-        defMOD();
-        defRM();
-        defInstr();
-    }
-
     private String getInstruccion(String instruccion, String x, String y) {
-        List<InstructionFormat> instrFormats = instructionMap.get(instruccion);
-        String op1 = x;
-        String op2 = y;
+        System.out.println("Buscando instrucción: " + instruccion);
+        List<InstructionFormat> instrFormats;
+        //si la instruccion empieza con J, buscar en el mapa de saltos
+        instruccion.trim();
+        instruccion.stripLeading();
+        instruccion.stripTrailing();
+        instruccion.toUpperCase();
+        instruccion.replaceAll("\t", " ");
 
-        // Mapa para asociar las condiciones con los índices de los formatos de instrucción
-        Map<String, Integer> formatMap = new HashMap<>();
-        formatMap.put("Registro a registro", 0);
-        formatMap.put("Memoria a registro", 1);
-        formatMap.put("Registro a memoria", 2);
-        formatMap.put("Memoria a inmediato", 3);
-        formatMap.put("Registro a inmediato", 4);
-
-        // Si el mapa es de saltos
+        //si tiene espacios o tabulaciones, quitarlos
+        System.out.println("instruccion:"+instruccion);
         if (instruccion.startsWith("J")) {
-            // Condicion para saber si es una etiqueta ejemplo if:
-            if (op1.matches("[a-zA-Z]+:")) {
-                return instrFormats.get(0).getBinaryCode();
+            System.out.println("empece con J "+instruccion);
+            instrFormats = instructionMap.get("JUMP");
+            if (instrFormats == null) {
+                System.out.println("Instrucción no encontrada en el mapa de saltos: " + instruccion);
+                return null;
             }
-            formatMap.put("JG", 1);
-            formatMap.put("JL", 2);
-            formatMap.put("JE", 3);
-            formatMap.put("JNE", 4);
-            formatMap.put("JGE", 5);
-            formatMap.put("JLE", 6);
-
-            // Determinar el formato de instrucción basado en el operando
-            Integer i = formatMap.get(op1);
-            if (i != null && i < instrFormats.size()) {
-                return instrFormats.get(i).getBinaryCode();
+            //encontro el mapa de JUMP ahora buscar la instruccion
+            for (InstructionFormat format : instrFormats) {
+                if (format.getMode().equals(instruccion)) {
+                    System.out.println("Formato encontrado para " + instruccion + ": " + format.getBinaryCode());
+                    return format.getBinaryCode();
+                }
             }
+            
         }
+        //si no empieza con J, buscar en el mapa de instrucciones
+        instrFormats = instructionMap.get(instruccion.trim());
+        if (instrFormats == null) {
+            System.out.println("Instrucción no encontrada en el mapa de instrucciones: " + instruccion);
+            return null;
+        }
+
+        String op1 = x.trim();
+        String op2 = y.trim();
 
         // Determinar el formato de instrucción basado en los operandos
         String formatKey = "";
         if (isRegistro(op1) && isRegistro(op2)) {
             formatKey = "Registro a registro";
-        }
-        if (op1.startsWith("[")||op1.matches("[a-zA-Z]+") && isRegistro(op2)) {
+        } 
+        if (op1.matches("[a-zA-Z_][a-zA-Z_0-9]*") && isRegistro(op2)) {
             formatKey = "Memoria a registro";
-        }
-        if (isRegistro(op1) && op2.startsWith("[")||op2.matches("[a-zA-Z]+")) {
+        } 
+        if (isRegistro(op1) && op2.matches("[a-zA-Z_][a-zA-Z_0-9]*")) {
             formatKey = "Registro a memoria";
-        }
-        if (op1.startsWith("[")||op1.matches("[a-zA-Z]+") && op2.matches("[0-9]+")) {
+        } 
+         if (op1.matches("[a-zA-Z_][a-zA-Z_0-9]*") && op2.matches("[0-9]+")) {
             formatKey = "Memoria a inmediato";
         }
         if (isRegistro(op1) && op2.matches("[0-9]+")) {
             formatKey = "Registro a inmediato";
         }
 
-        // Obtener el índice del formato de instrucción y devolver el código binario
+        System.out.println("Formato determinado: " + formatKey);
+
         Integer index = formatMap.get(formatKey);
         if (index != null && index < instrFormats.size()) {
             return instrFormats.get(index).getBinaryCode();
         }
 
+        System.out.println(
+                "Formato no encontrado para la instrucción: " + instruccion + " con operandos: " + op1 + ", " + op2);
         return null;
     }
 
@@ -121,11 +142,11 @@ public class ObjGenerator {
         instructionMap.put("MOV", movFormats);
 
         List<InstructionFormat> addFormats = new ArrayList<>();
-        addFormats.add(new InstructionFormat("Registro a registro", "0000 00{d} w mod reg r/m desp"));
-        addFormats.add(new InstructionFormat("Memoria a registro", "0000 00{d} w mod reg r/m desp"));
-        addFormats.add(new InstructionFormat("Registro a memoria", "0000 00{d} w mod reg r/m desp"));
-        addFormats.add(new InstructionFormat("Memoria a inmediato", "1000 00{s} w mod 000 r/m desp {datos}"));
-        addFormats.add(new InstructionFormat("Registro a inmediato", "1000 00{s} w mod 000 r/m desp {datos}"));
+        addFormats.add(new InstructionFormat("Registro a registro", "0000 00{d}w mod reg r/m desp"));
+        addFormats.add(new InstructionFormat("Memoria a registro", "0000 00{d}w mod reg r/m desp"));
+        addFormats.add(new InstructionFormat("Registro a memoria", "0000 00{d}w mod reg r/m desp"));
+        addFormats.add(new InstructionFormat("Memoria a inmediato", "1000 00{s}w mod 000 r/m desp {datos}"));
+        addFormats.add(new InstructionFormat("Registro a inmediato", "1000 00{s}w mod 000 r/m desp {datos}"));
         instructionMap.put("ADD", addFormats);
 
         List<InstructionFormat> subFormats = new ArrayList<>();
@@ -137,15 +158,16 @@ public class ObjGenerator {
         instructionMap.put("SUB", subFormats);
 
         List<InstructionFormat> JumpFormats = new ArrayList<>();
-        JumpFormats.add(new InstructionFormat("Etiqueta", "1110 1001 desp"));
-        JumpFormats.add(new InstructionFormat("JG", "0111 1111 desp"));
-        JumpFormats.add(new InstructionFormat("JL", "0111 1100 desp"));
-        JumpFormats.add(new InstructionFormat("JE", "0111 0100 desp"));
-        JumpFormats.add(new InstructionFormat("JNE", "0111 0101 desp"));
-        JumpFormats.add(new InstructionFormat("JGE", "0111 1101 desp"));
-        JumpFormats.add(new InstructionFormat("JLE", "0111 1110 desp"));
+        JumpFormats.add(new InstructionFormat("Etiqueta", "1110 1001 eti"));
+        JumpFormats.add(new InstructionFormat("JG", "0111 1111 eti"));
+        JumpFormats.add(new InstructionFormat("JL", "0111 1100 eti"));
+        JumpFormats.add(new InstructionFormat("JE", "0111 0100 eti"));
+        JumpFormats.add(new InstructionFormat("JNE", "0111 0101 eti"));
+        JumpFormats.add(new InstructionFormat("JGE", "0111 1101 eti"));
+        JumpFormats.add(new InstructionFormat("JLE", "0111 1110 eti"));
+        JumpFormats.add(new InstructionFormat("JMP", "1110 1001 eti"));
 
-        instructionMap.put("JMP", JumpFormats);
+        instructionMap.put("JUMP", JumpFormats);
 
         List<InstructionFormat> cmpFormats = new ArrayList<>();
         cmpFormats.add(new InstructionFormat("Registro a registro", "0011 10{d}w mod reg r/m desp"));
@@ -153,7 +175,16 @@ public class ObjGenerator {
         cmpFormats.add(new InstructionFormat("Registro a memoria", "0011 10{d}w mod reg r/m desp"));
         cmpFormats.add(new InstructionFormat("Memoria a inmediato", "1000 00{s}w mod 111 r/m desp {datos}"));
         cmpFormats.add(new InstructionFormat("Registro a inmediato", "1000 00{s}w mod 111 r/m desp {datos}"));
+
         instructionMap.put("CMP", cmpFormats);
+
+        System.out.println("Instrucciones definidas: " + instructionMap.keySet());
+
+        formatMap.put("Registro a registro", 0);
+        formatMap.put("Memoria a registro", 1);
+        formatMap.put("Registro a memoria", 2);
+        formatMap.put("Memoria a inmediato", 3);
+        formatMap.put("Registro a inmediato", 4);
     }
 
     private void defRegs() {
@@ -252,27 +283,43 @@ public class ObjGenerator {
         return mod;
     }
 
-    private String getrm(String reg) {
-        String rm = RMMap.get(reg);
-        if (reg.startsWith("[")) {
-            return rm = "000";
+    private String getrm(String operando) {
+        if (operando.startsWith("[")) {
+            return "110";
         }
-        if (reg.matches("[0-9]+")) {
-            return rm = "101";
+        if (labelMap.containsKey(operando)) {
+            return "101";
         }
-
-        return rm;
+        String rm = RMMap.get(operando);
+        return rm != null ? rm : "000"; // Por defecto
     }
 
     public String translate(String lineas) {
+        System.out.println("Traduciendo código intermedio a código objeto...");
+        lineas = lineas.replace("\t+", " ");
+        //darle un trim a todo para que solo tenga 1 espacio entre cada cosa de la linea
+        lineas = lineas.replaceAll(" +", " ");
+        lineas = lineas.replace(",", " ");
+
+        System.out.println("Codigo mega formateado: " + lineas);
+            
         getShits(lineas);
         for (Instruccion instr : instrucciones) {
             System.out.println("Procesando instrucción: " + instr.getnameOp() + " " + instr.getOp1() + " " + instr.getOp2());
-            String codOp = getInstruccion(instr.getnameOp(), instr.getOp1(), instr.getOp2());
-            if (codOp == null) {
-                System.out.println("Instrucción no reconocida: " + instr.getnameOp() + " " + instr.getOp1() + " " + instr.getOp2());
-                continue; // Si codOp es null, saltar a la siguiente instrucción
+            System.out.println("soy la instruccion:" + instr.getnameOp().replace("\t+"," ")+" op1= "+instr.getOp1()+" op2= "+instr.getOp2());
+            String codOp=" ";
+            if (instr.getnameOp().startsWith("J")) {
+                codOp = buscarInstruccionSalto(instr.getnameOp().toUpperCase());
+            } else {
+                codOp = getInstruccion(instr.getnameOp(), instr.getOp1(), instr.getOp2());
             }
+    
+            if (codOp == null) {
+                System.out.println("Instrucción no reconocida: " + instr.getnameOp() + " " + instr.getOp1() + " "
+                        + instr.getOp2());
+                continue;
+            }
+    
             String d = "";
             String w = "";
             String mod = "";
@@ -280,53 +327,27 @@ public class ObjGenerator {
             String rm = "";
             if (codOp.contains("w")) {
                 w = getw(instr.getOp1());
-                if (w != null) {
-                    codOp = codOp.replace("w", w);
-                } else {
-                  //  System.out.println("Valor 'w' es null para el registro: " + instr.getOp1());
-                    w="0";
-                    codOp = codOp.replace("w", w);
-                }
+                codOp = codOp.replace("w", w != null ? w : "0");
             }
             if (codOp.contains("{d}")) {
-                d = "00";
+                d = "0";
                 codOp = codOp.replace("{d}", d);
             }
             if (codOp.contains("mod")) {
                 mod = getmod(instr.getOp1());
-                if (mod != null) {
-                    codOp = codOp.replace("mod", mod);
-                } else {
-                    System.out.println("Valor 'mod' es null para el registro: " + instr.getOp1());
-                    mod = "00"; // Valor por defecto
-                    codOp = codOp.replace("mod", mod);
-                }
+                codOp = codOp.replace("mod", mod != null ? mod : "00");
             }
             if (codOp.contains("reg")) {
                 reg = registerMap.get(instr.getOp1());
-                if (reg != null) {
-                    codOp = codOp.replace("reg", reg);
-                } else {
-                    System.out.println("Valor 'reg' es null para el registro: " + instr.getOp1());
+                if (reg == null) {
                     reg = registerMap.get(instr.getOp2());
-                    if (reg != null) {
-                        codOp = codOp.replace("reg", reg);
-                    } else {
-                        reg = "000"; // Valor por defecto
-                        codOp = codOp.replace("reg", reg);
-                    }
                 }
+                codOp = codOp.replace("reg", reg != null ? reg : "000");
             }
-            
+    
             if (codOp.contains("r/m")) {
                 rm = getrm(instr.getOp2());
-                if (rm != null) {
-                    codOp = codOp.replace("r/m", rm);
-                } else {
-                    System.out.println("Valor 'r/m' es null para el registro: " + instr.getOp2());
-                    rm = "000"; // Valor por defecto
-                    codOp = codOp.replace("r/m", rm);
-                }
+                codOp = codOp.replace("r/m", rm != null ? rm : "000");
             }
             if (codOp.contains("{s}")) {
                 String s = "0";
@@ -340,45 +361,34 @@ public class ObjGenerator {
                 }
                 codOp = codOp.replace("{datos}", datos);
             }
+    
             if (codOp.contains("desp")) {
-                String mmm = "0000 0000 ";
-                codOp = codOp.replace("desp", mmm);
+                String desp = "00000000";
+                codOp = codOp.replace("desp", desp);
+            }
+            if (codOp.contains("mmm")) {
+                String mmm = MMMap.containsKey(instr.getOp1()) ? getrm(instr.getOp1()) : getrm(instr.getOp2());
+                codOp = codOp.replace("mmm", mmm != null ? mmm : "000");
             }
 
+            if (codOp.contains("eti")) {
+                String etiqueta = instr.getOp1();
+                Integer etiquetaDireccion = labelMap.get(etiqueta);
+                if (etiquetaDireccion != null) {
+                    int desplazamiento = etiquetaDireccion - memoryAddressCounter - 2; // -2 para el tamaño del salto
+                    String despHex = String.format("%08X", desplazamiento);
+                    String despHexLastTwo = despHex.substring(despHex.length() - 2);            
+                    String despBin = new BigInteger(despHexLastTwo, 16).toString(2);
+            
+                    // Reemplazar "eti" en codOp con el valor binario
+                    codOp = codOp.replace("eti", despBin);
+                }
+            }
+    
             appendCodeWithAddress(codOp);
-
-
         }
-
+        System.out.println("Código objeto final:\n" + code.toString());
         return code.toString();
-    }
-
-    private void appendCodeWithAddress(String codOp) {
-        String[] parts = codOp.split(" ");
-        StringBuilder formattedCode = new StringBuilder();
-        String address = "00A0:" + generateMemoryAddress();
-    
-        for (int i = 0; i < parts.length; i++) {
-            formattedCode.append(parts[i]);
-            if ((i + 1) % 2 == 0) {
-                formattedCode.append(" ");
-            }
-        }
-    
-        // Insertar un espacio cada 4 bits
-        StringBuilder spacedCode = new StringBuilder();
-        for (int i = 0; i < formattedCode.length(); i++) {
-            spacedCode.append(formattedCode.charAt(i));
-            if ((i + 1) % 4 == 0 && i != formattedCode.length() - 1) {
-                spacedCode.append(" ");
-            }
-        }
-    
-        code.append(address).append(" ").append(spacedCode.toString().trim()).append("\n");
-    
-        // Incrementar la dirección de memoria en función del número de bytes
-        int byteCount = (int) Math.ceil(parts.length / 2.0);
-        memoryAddressCounter += byteCount;
     }
 
     public void getShits(String linea) {
@@ -392,26 +402,45 @@ public class ObjGenerator {
 
         // Procesar cada línea de instrucción
         for (int i = 0; i < lineas.length; i++) {
+            System.out.println("Procesando línea: " + lineas[i]);
+            if (lineas[i].isEmpty()||lineas[i].contains("END")||lineas[i].contains("START") ) {
+                continue; 
+            }
             if (lineas[i].equalsIgnoreCase(",")) {
+                System.out.println("A mi no me saltaron"+lineas[i]);
                 continue;
             }
             if (lineas[i].contains(".CODE")) {
+                System.out.println("Línea de código encontrada y saltada: " + lineas[i]);
                 continue; // Saltar la línea que contiene .code
             }
             if (lineas[i].contains(".DATA") || lineas[i].contains("DB") || lineas[i].contains("DW")) {
                 System.out.println("Línea de cabecera saltada: " + lineas[i]);
                 continue; // Saltar las líneas de cabecera
             }
-
-            String[] instruccion = lineas[i].split("[ ,]+");
+            String[] instruccion = lineas[i].split("[, ]+");
             if (instruccion.length == 3) {
+                System.out.println("Instrucción encontradaaaaa: " + instruccion[0] + " " + instruccion[1] + " " + instruccion[2]);
                 Instruccion instr = new Instruccion(instruccion[0], instruccion[1], instruccion[2]);
                 instrucciones.add(instr);
+                System.out.println("Instrucción agregada: " + instr.getnameOp() + " " + instr.getOp1() + " " + instr.getOp2());
             }
+
+            // Almacenar etiquetas y sus direcciones de memoria
+            if (instruccion.length == 1 && instruccion[0].endsWith(":")) {
+                String etiqueta = instruccion[0].substring(0, instruccion[0].length() - 1);
+                labelMap.put(etiqueta, memoryAddressCounter);
+                System.out.println("Etiqueta agregadaaaaaa: " + etiqueta + " en dirección " + memoryAddressCounter);
+            }
+            if (instruccion.length == 2) {
+                Instruccion instr = new Instruccion(instruccion[0], instruccion[1], "");
+                instrucciones.add(instr);
+                System.out.println("Instrucción agregadaaaaaa2: " + instr.getnameOp() + " " + instr.getOp1());
+            }
+
         }
     }
 
-    // Método actualizado para generar el header del archivo
     public String generateHeader(String linea) {
         String[] lineas = linea.split("\n");
         for (String lin : lineas) {
@@ -423,7 +452,7 @@ public class ObjGenerator {
                 String address = generateMemoryAddress();
                 String[] parts = lin.split(" ");
                 String value = parts[parts.length - 1];
-                String binaryValue = "0000 0000 0000 0000"; // Valor por defecto
+                String binaryValue = "0000 0000 0000 0000";
 
                 if (!value.equals("?")) {
                     int intValue = Integer.parseInt(value);
@@ -433,38 +462,75 @@ public class ObjGenerator {
 
                 code.append("00A0:").append(address).append(": ").append(binaryValue).append("\n");
                 incrementMemoryAddress("DB");
+                MMMap.put(parts[0], address);
             }
 
             if (lin.contains("DW")) {
                 String address = generateMemoryAddress();
                 String[] parts = lin.split(" ");
                 String value = parts[parts.length - 1];
-                String binaryValue = "0000 0000 0000 0000 0000 0000 0000 0000"; // Valor por defecto
+                String binaryValue = "0000 0000 0000 0000 0000 0000 0000 0000";
 
                 if (!value.equals("?")) {
                     int intValue = Integer.parseInt(value);
                     String binaryPart = String.format("%16s", Integer.toBinaryString(intValue)).replace(' ', '0');
                     binaryValue = "0000 0000 0000 0000 " + binaryPart;
                 }
-
                 code.append("00A0:").append(address).append(": ").append(binaryValue).append("\n");
                 incrementMemoryAddress("DW");
+                MMMap.put(parts[0], address);
             }
+
         }
 
         return code.toString();
     }
 
-    public static void main(String[] args) {
-        ObjGenerator obj = new ObjGenerator();
-        String instrucciones = ".DATA\n" +
-"X DB 9\n" +
-"Y DB 10\n" +
-".CODE\n" +
-"MOV X, AX\n" +
-"MOV Y, AX\n";
+    private void appendCodeWithAddress(String codOp) {
+        String[] parts = codOp.split(" ");
+        StringBuilder formattedCode = new StringBuilder();
+        String address = "00A0:" + generateMemoryAddress();
 
-        String codigo = obj.translate(instrucciones.toUpperCase());
-        System.out.println(codigo);
+        for (int i = 0; i < parts.length; i++) {
+            formattedCode.append(parts[i]);
+            if ((i + 1) % 2 == 0) {
+                formattedCode.append(" ");
+            }
+        }
+
+        // Insertar un espacio cada 4 bits
+        StringBuilder spacedCode = new StringBuilder();
+        for (int i = 0; i < formattedCode.length(); i++) {
+            spacedCode.append(formattedCode.charAt(i));
+            if ((i + 1) % 4 == 0 && i != formattedCode.length() - 1) {
+                spacedCode.append(" ");
+            }
+        }
+
+        code.append(address).append(" ").append(spacedCode.toString().trim()).append("\n");
+
+        // Incrementar la dirección de memoria en función del número de bytes
+        int byteCount = (int) Math.ceil(parts.length / 2.0);
+        memoryAddressCounter += byteCount;
     }
+
+    private String buscarInstruccionSalto(String instruccion) {
+        System.out.println("Buscando instrucción de salto: ENTRE" + instruccion);
+        List<InstructionFormat> jumpFormats = instructionMap.get("JUMP");
+
+        if (jumpFormats == null) {
+            System.out.println("Mapa de saltos no encontrado.");
+            return null;
+        }
+        for (InstructionFormat format : jumpFormats) {
+            if (format.getMode().equals(instruccion)) {
+                System.out.println("Formato encontrado para " + instruccion + ": " + format.getBinaryCode());
+                return format.getBinaryCode();
+            }
+        }
+
+        System.out.println("Instrucción de salto no encontrada: " + instruccion);
+        return null;
+    }
+
 }

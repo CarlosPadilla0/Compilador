@@ -3,9 +3,10 @@ import java.util.List;
 
 public class Scanner {
     private String contenido;
-    private List<Token>tokens;
+    private List<Token> tokens;
     private Parser parser;
     private Semantic semantico;
+    private String codigoIntermedio; // Variable para almacenar el código intermedio
 
     public void setContenido(String texto) {
         this.contenido = texto;
@@ -18,25 +19,41 @@ public class Scanner {
     public void reset() {
         this.contenido = "";
         this.tokens.clear();
+        this.codigoIntermedio = null; // Limpiar el código intermedio almacenado
     }
 
     public String analizarSintactico() {
-    	parser = new Parser(tokens);
-    	parser.parse();
-    	return parser.getLineaError();
+        parser = new Parser(tokens);
+        parser.parse();
+        return parser.getLineaError();
     }
+
     public String analizarSemantico() {
         semantico = new Semantic(tokens);
         return semantico.analyze();
     }
-    
+
     public String generarCodigoIntermedio() {
-    	return semantico.generarCodigoIntermedio();
+        if (codigoIntermedio == null) {
+            System.out.println("Generando código intermedio en Scanner...");
+            codigoIntermedio = semantico.generarCodigoIntermedio();
+        }
+        return codigoIntermedio;
     }
 
+    public String generarCodigoObjeto() {
+        if (codigoIntermedio == null) {
+            System.out.println("Generando código intermedio antes de generar código objeto...");
+            codigoIntermedio = generarCodigoIntermedio();
+        }
+        ObjGenerator objGen = new ObjGenerator();
+        String codigoObjeto = objGen.translate(codigoIntermedio);
+        System.out.println("Código objeto generado:\n" + codigoObjeto);
+        return codigoObjeto;
+    }
 
     public List<Token> analizarLexico() {
-       tokens = new ArrayList<>();
+        tokens = new ArrayList<>();
         int i = 0;
 
         while (i < contenido.length()) {
@@ -60,37 +77,32 @@ public class Scanner {
                 switch (word) {
                     case "START":
                         nuevoToken = new Token(TokenType.START, word);
-                        nuevoToken.setPr(true);
                         break;
                     case "END":
                         nuevoToken = new Token(TokenType.END, word);
-                        nuevoToken.setPr(true);
                         break;
                     case "INT":
                         nuevoToken = new Token(TokenType.INT, word);
-                        nuevoToken.setPr(true);
                         break;
                     case "BOOLEAN":
                         nuevoToken = new Token(TokenType.BOOLEAN, word);
-                        nuevoToken.setPr(true);
                         break;
                     case "WHILE":
                         nuevoToken = new Token(TokenType.WHILE, word);
-                        nuevoToken.setPr(true);
                         break;
                     case "IF":
                         nuevoToken = new Token(TokenType.IF, word);
-                        nuevoToken.setPr(true);
                         break;
                     case "ELSE":
                         nuevoToken = new Token(TokenType.ELSE, word);
-                        nuevoToken.setPr(true);
                         break;
                     case "STRING":
                         nuevoToken = new Token(TokenType.STRING, word);
+                        break;
+                    case "PRINT":
+                        nuevoToken = new Token(TokenType.PRINT, word);
                         nuevoToken.setPr(true);
                         break;
-
                     default:
                         nuevoToken = new Token(TokenType.IDENTIFICADOR, word);
                         break;
@@ -125,21 +137,19 @@ public class Scanner {
                 if (i < contenido.length() && contenido.charAt(i) == '=') {
                     sb.append(contenido.charAt(i));
                     i++;
-                    tokens.add(new Token(TokenType.OPERADOR_RELACIONAL, sb.toString()));
-                } else {
-                    tokens.add(new Token(TokenType.OPERADOR_RELACIONAL, sb.toString()));
                 }
+                tokens.add(new Token(TokenType.OPERADOR_RELACIONAL, sb.toString()));
                 continue;
             }
 
             if (currentChar == '=') {
                 if (i + 1 < contenido.length() && contenido.charAt(i + 1) == '=') {
                     tokens.add(new Token(TokenType.OPERADOR_RELACIONAL, "=="));
-                    i += 2;
+                    i++;
                 } else {
                     tokens.add(new Token(TokenType.IGUAL, "="));
-                    i++;
                 }
+                i++;
                 continue;
             }
             if (currentChar == '"') {
@@ -152,12 +162,11 @@ public class Scanner {
                 }
                 
                 if (i < contenido.length() && contenido.charAt(i) == '"') {
-                    i++;  
                     tokens.add(new Token(TokenType.TEXTO, sb.toString()));
-                } 
+                    i++;
+                }
                 continue;
             }
-
 
             // Paréntesis y llaves
             switch (currentChar) {

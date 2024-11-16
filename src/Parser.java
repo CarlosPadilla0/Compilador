@@ -93,6 +93,10 @@ public class Parser {
 	        CheckIf();
 	        return;
 	    }
+	    if (tokenActual.getTipo() == TokenType.PRINT) {
+	        printInstruccion(); 
+	        return;
+	    }
 	    if (tokenActual.getTipo()==TokenType.WHILE) {
 	    	CheckWhile();
 	    	return;
@@ -189,9 +193,7 @@ public class Parser {
 	    avanzar();
 	    expresion();
 	
-	  
-
-	   
+  
 
 	    if (tokenActual.getTipo() != TokenType.PUNTO_COMA) {
 	        errorMsg = "Se esperaba un ; al final de la instrucción.";
@@ -330,5 +332,25 @@ public class Parser {
 		}
 	}
 	
+	private void printInstruccion() {
+	    avanzar(); 
+
+	    if (tokenActual.getTipo() != TokenType.TEXTO && 
+	        tokenActual.getTipo() != TokenType.IDENTIFICADOR) {
+	        errorMsg = "Se esperaba una cadena de texto o un identificador de tipo STRING después de PRINT.";
+	        return;
+	    }
+
+	    avanzar(); 
+
+	    // Verificamos el punto y coma al final
+	    if (tokenActual.getTipo() != TokenType.PUNTO_COMA) {
+	        errorMsg = "Se esperaba un ';' al final de la instrucción PRINT.";
+	        return;
+	    }
+
+	    avanzar(); 
+	}
+
 	
 }
